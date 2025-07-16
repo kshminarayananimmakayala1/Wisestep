@@ -10,8 +10,13 @@ const UrlShortener = () => {
         if(inputUrl){
             try {
                 const result = await shortenUrl(inputUrl)
-                setShortUrl(result);
-                setMessage('');
+                console.log(result)
+                if (result.status === 200) {
+                    setShortUrl(`${process.env.REACT_APP_BASE_URL}${result.data}`);
+                    setMessage('');
+                } else {
+                    setMessage(result.data);
+                }  
             } catch (err) {
                 setMessage(err.response?.data || "Something went wrong");
             }
