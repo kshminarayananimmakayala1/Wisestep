@@ -9,19 +9,21 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.wisestep.linkshortener.dto.UrlMapping;
+import com.wisestep.linkshortener.repository.UrlMappingRepo;
 import com.wisestep.linkshortener.service.LinkShortenerService;
 
 @Service
 public class LinkShortenerSerivceImpl implements LinkShortenerService {
 
-	 private final Map<String, UrlMapping> urlStore = new ConcurrentHashMap<>();
-	 private final Map<String, String> reverseLookup = new ConcurrentHashMap<>();
+	@Autowired
+	private UrlMappingRepo urlMappingRepo;
 	 private final Duration expiry = Duration.ofMinutes(5);
 	 
 	@Override
@@ -30,19 +32,18 @@ public class LinkShortenerSerivceImpl implements LinkShortenerService {
 	            return ResponseEntity.badRequest().body("Invalid URL");
 	        }
 
-	        if (reverseLookup.containsKey(originalUrl)) {
-	            return ResponseEntity.ok("http://localhost:7071/" + reverseLookup.get(originalUrl));
+	        if (urlMappingRepo.findByOriginalUrl(originalUrl)!=null) {
+	            return ResponseEntity.badRequest().body("URL already exists");
 	        }
 
 	        String shortId = generateShortId();
-	        urlStore.put(shortId, new UrlMapping(originalUrl, LocalDateTime.now()));
-	        reverseLookup.put(originalUrl, shortId);
-	        return ResponseEntity.ok("http://localhost:7071/" + shortId);
+	        urlMappingRepo.save(new UrlMapping(shortId,originalUrl, LocalDateTime.now()));
+	        return ResponseEntity.ok(shortId);
 	}
 
 	@Override
 	public ResponseEntity<Object> redirect(String shortId) {
-		 UrlMapping mapping = urlStore.get(shortId);
+		 UrlMapping mapping = urlMappingRepo.findByShortId(shortId);
 
 	        if (mapping == null) {
 	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("URL does not exist. <a href='/create'>Create a new one</a>");
