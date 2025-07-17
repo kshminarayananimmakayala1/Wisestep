@@ -18,7 +18,14 @@ const UrlShortener = () => {
                     setMessage(result.data);
                 }  
             } catch (err) {
-                setMessage(err.response?.data || "Something went wrong");
+                if (err.status === 409) {
+                    setShortUrl(`${process.env.REACT_APP_BASE_URL}${err.response?.data}`);
+                    console.log(shortUrl)
+                    setMessage('URL already exists, you can revisit at');
+                }else{
+                    setMessage(err.response?.data || "Something went wrong");
+
+                }
             }
         }
     };
@@ -41,8 +48,9 @@ const UrlShortener = () => {
                     />
                     <button onClick={handleShorten} className='button'>Shorten</button>
                 </div>
-                {shortUrl && <p className='result'><a href={shortUrl}>{shortUrl}</a></p>}
                 {message && <p className='message'>{message}</p>}
+                {shortUrl && <p className='result'><a href={shortUrl}>{shortUrl}</a></p>}
+                
             </div>
         </div>
     );
